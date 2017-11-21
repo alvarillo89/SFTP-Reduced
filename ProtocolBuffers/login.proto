@@ -1,0 +1,19 @@
+syntax = "proto2";
+
+option java_package = "protocols";
+option java_outer_classname = "Login";
+
+message LoginRequest {
+  required string user = 1;
+  required string pass = 2;
+  required bytes publicKey = 3;
+}
+
+message LoginResponse {
+  enum Status {
+    OK = 201;
+    ERROR = 401;
+  }
+
+  required Status code = 1;
+}

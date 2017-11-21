@@ -1,0 +1,1 @@
+protoc -IProtocolBuffers/ --java_out=Server/src/server ProtocolBuffers/*.proto
