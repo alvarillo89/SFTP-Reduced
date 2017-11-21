@@ -15,26 +15,23 @@ public class ServerFTP {
 		// Puerto de escucha PI
 		final int port = 31416;
 
+    KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance("RSA");
+    KeyPair keyPair = keyPairGenerator.generateKeyPair();
+    PublicKey publicKey = keyPair.getPublic();
+    PrivateKey privateKey = keyPair.getPrivate();
+
 		try {
-			// Abrimos el socket en modo pasivo, escuchando el en puerto indicado por "port"
 			serverSocket = new ServerSocket(port);
 
-			do {
+			while (true) {
+				clientSocket = serverSocket.accept();
 
-				// Aceptamos una nueva conexión con accept()
-				socketServicio = serverSocket.accept();
-
-				// Creamos un objeto de la clase ProcesadorYodafy, pasándole como
-				// argumento el nuevo socket, para que realice el procesamiento
-				// Este esquema permite que se puedan usar hebras más fácilmente.
-				ProcesadorYodafy procesador = new ProcesadorYodafy(socketServicio);
-				hebrita = new Hebrita(procesador);
-				hebrita.start();
-
-			} while (true);
+				Handler handler = new Handler(clientSocket, privateKey, publicKey);
+				handler.start();
+			}
 
 		} catch (IOException e) {
 			System.err.println("Error al escuchar en el puerto "+port);
 		}
-
 	}
+}

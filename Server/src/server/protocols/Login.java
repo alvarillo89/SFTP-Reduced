@@ -41,13 +41,18 @@ public final class Login {
         getPassBytes();
 
     /**
-     * <code>required bytes publicKey = 3;</code>
+     * <code>required string publicKey = 3;</code>
      */
     boolean hasPublicKey();
     /**
-     * <code>required bytes publicKey = 3;</code>
+     * <code>required string publicKey = 3;</code>
      */
-    com.google.protobuf.ByteString getPublicKey();
+    java.lang.String getPublicKey();
+    /**
+     * <code>required string publicKey = 3;</code>
+     */
+    com.google.protobuf.ByteString
+        getPublicKeyBytes();
   }
   /**
    * Protobuf type {@code LoginRequest}
@@ -114,8 +119,9 @@ public final class Login {
               break;
             }
             case 26: {
+              com.google.protobuf.ByteString bs = input.readBytes();
               bitField0_ |= 0x00000004;
-              publicKey_ = input.readBytes();
+              publicKey_ = bs;
               break;
             }
           }
@@ -243,24 +249,51 @@ public final class Login {
     }
 
     public static final int PUBLICKEY_FIELD_NUMBER = 3;
-    private com.google.protobuf.ByteString publicKey_;
+    private java.lang.Object publicKey_;
     /**
-     * <code>required bytes publicKey = 3;</code>
+     * <code>required string publicKey = 3;</code>
      */
     public boolean hasPublicKey() {
       return ((bitField0_ & 0x00000004) == 0x00000004);
     }
     /**
-     * <code>required bytes publicKey = 3;</code>
+     * <code>required string publicKey = 3;</code>
      */
-    public com.google.protobuf.ByteString getPublicKey() {
-      return publicKey_;
+    public java.lang.String getPublicKey() {
+      java.lang.Object ref = publicKey_;
+      if (ref instanceof java.lang.String) {
+        return (java.lang.String) ref;
+      } else {
+        com.google.protobuf.ByteString bs = 
+            (com.google.protobuf.ByteString) ref;
+        java.lang.String s = bs.toStringUtf8();
+        if (bs.isValidUtf8()) {
+          publicKey_ = s;
+        }
+        return s;
+      }
+    }
+    /**
+     * <code>required string publicKey = 3;</code>
+     */
+    public com.google.protobuf.ByteString
+        getPublicKeyBytes() {
+      java.lang.Object ref = publicKey_;
+      if (ref instanceof java.lang.String) {
+        com.google.protobuf.ByteString b = 
+            com.google.protobuf.ByteString.copyFromUtf8(
+                (java.lang.String) ref);
+        publicKey_ = b;
+        return b;
+      } else {
+        return (com.google.protobuf.ByteString) ref;
+      }
     }
 
     private void initFields() {
       user_ = "";
       pass_ = "";
-      publicKey_ = com.google.protobuf.ByteString.EMPTY;
+      publicKey_ = "";
     }
     private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
@@ -294,7 +327,7 @@ public final class Login {
         output.writeBytes(2, getPassBytes());
       }
       if (((bitField0_ & 0x00000004) == 0x00000004)) {
-        output.writeBytes(3, publicKey_);
+        output.writeBytes(3, getPublicKeyBytes());
       }
       getUnknownFields().writeTo(output);
     }
@@ -315,7 +348,7 @@ public final class Login {
       }
       if (((bitField0_ & 0x00000004) == 0x00000004)) {
         size += com.google.protobuf.CodedOutputStream
-          .computeBytesSize(3, publicKey_);
+          .computeBytesSize(3, getPublicKeyBytes());
       }
       size += getUnknownFields().getSerializedSize();
       memoizedSerializedSize = size;
@@ -438,7 +471,7 @@ public final class Login {
         bitField0_ = (bitField0_ & ~0x00000001);
         pass_ = "";
         bitField0_ = (bitField0_ & ~0x00000002);
-        publicKey_ = com.google.protobuf.ByteString.EMPTY;
+        publicKey_ = "";
         bitField0_ = (bitField0_ & ~0x00000004);
         return this;
       }
@@ -507,7 +540,9 @@ public final class Login {
           onChanged();
         }
         if (other.hasPublicKey()) {
-          setPublicKey(other.getPublicKey());
+          bitField0_ |= 0x00000004;
+          publicKey_ = other.publicKey_;
+          onChanged();
         }
         this.mergeUnknownFields(other.getUnknownFields());
         return this;
@@ -700,23 +735,51 @@ public final class Login {
         return this;
       }
 
-      private com.google.protobuf.ByteString publicKey_ = com.google.protobuf.ByteString.EMPTY;
+      private java.lang.Object publicKey_ = "";
       /**
-       * <code>required bytes publicKey = 3;</code>
+       * <code>required string publicKey = 3;</code>
        */
       public boolean hasPublicKey() {
         return ((bitField0_ & 0x00000004) == 0x00000004);
       }
       /**
-       * <code>required bytes publicKey = 3;</code>
+       * <code>required string publicKey = 3;</code>
        */
-      public com.google.protobuf.ByteString getPublicKey() {
-        return publicKey_;
+      public java.lang.String getPublicKey() {
+        java.lang.Object ref = publicKey_;
+        if (!(ref instanceof java.lang.String)) {
+          com.google.protobuf.ByteString bs =
+              (com.google.protobuf.ByteString) ref;
+          java.lang.String s = bs.toStringUtf8();
+          if (bs.isValidUtf8()) {
+            publicKey_ = s;
+          }
+          return s;
+        } else {
+          return (java.lang.String) ref;
+        }
       }
       /**
-       * <code>required bytes publicKey = 3;</code>
+       * <code>required string publicKey = 3;</code>
        */
-      public Builder setPublicKey(com.google.protobuf.ByteString value) {
+      public com.google.protobuf.ByteString
+          getPublicKeyBytes() {
+        java.lang.Object ref = publicKey_;
+        if (ref instanceof String) {
+          com.google.protobuf.ByteString b = 
+              com.google.protobuf.ByteString.copyFromUtf8(
+                  (java.lang.String) ref);
+          publicKey_ = b;
+          return b;
+        } else {
+          return (com.google.protobuf.ByteString) ref;
+        }
+      }
+      /**
+       * <code>required string publicKey = 3;</code>
+       */
+      public Builder setPublicKey(
+          java.lang.String value) {
         if (value == null) {
     throw new NullPointerException();
   }
@@ -726,11 +789,24 @@ public final class Login {
         return this;
       }
       /**
-       * <code>required bytes publicKey = 3;</code>
+       * <code>required string publicKey = 3;</code>
        */
       public Builder clearPublicKey() {
         bitField0_ = (bitField0_ & ~0x00000004);
         publicKey_ = getDefaultInstance().getPublicKey();
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>required string publicKey = 3;</code>
+       */
+      public Builder setPublicKeyBytes(
+          com.google.protobuf.ByteString value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField0_ |= 0x00000004;
+        publicKey_ = value;
         onChanged();
         return this;
       }
@@ -1262,7 +1338,7 @@ public final class Login {
   static {
     java.lang.String[] descriptorData = {
       "\n\013login.proto\"=\n\014LoginRequest\022\014\n\004user\030\001 " +
-      "\002(\t\022\014\n\004pass\030\002 \002(\t\022\021\n\tpublicKey\030\003 \002(\014\"S\n\r" +
+      "\002(\t\022\014\n\004pass\030\002 \002(\t\022\021\n\tpublicKey\030\003 \002(\t\"S\n\r" +
       "LoginResponse\022#\n\004code\030\001 \002(\0162\025.LoginRespo" +
       "nse.Status\"\035\n\006Status\022\007\n\002OK\020\311\001\022\n\n\005ERROR\020\221" +
       "\003B\022\n\tprotocolsB\005Login"

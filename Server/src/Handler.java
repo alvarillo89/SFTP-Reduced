@@ -10,19 +10,15 @@ import java.lang.Thread;
 import protocols.Operations.OperationRequest;
 import protocols.Operations.OperationResponse;
 import protocols.Operations.Kind;
+import protocols.Login.LoginRequest;
 import protocols.Login.LoginResponse;
 import protocols.Login.LoginRequest;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.Path;
-import java.security.*;
-import javax.crypto.Cipher;
 
 public class Handler extends Thread implements Runnable {
 	private Socket clientSocket;
-  private PrivateKey serverPrivateKey;
-  private PublicKey serverPublicKey;
-  private PublicKey clientPublicKey;
 	private InputStream inputStream;
 	private OutputStream outputStream;
 
@@ -30,50 +26,27 @@ public class Handler extends Thread implements Runnable {
       if (user == "lmao" && password == "lmao") return true;
   }
 
-  public void loadPublicKey(String key) throws GeneralSecurityException, IOException {
-    byte[] data = Base64.getDecoder().decode((key.getBytes()));
-    X509EncodedKeySpec spec = new X509EncodedKeySpec(data);
-    KeyFactory fact = KeyFactory.getInstance("RSA/ECB/PKCS1Padding");
-    this.clientPublicKey = fact.generatePublic(spec);
-   }
-
-  private static byte[] encrypt(byte[] msg){
-    Cipher rsa = Cipher.getInstance("RSA/ECB/PKCS1Padding");
-    rsa.init(Cipher.ENCRYPT_MODE, this.publicKey);
-    return rsa.doFinal(msg);
-  }
-
-  private static byte[] decrypt(byte[] msg){
-    Cipher rsa = Cipher.getInstance("RSA/ECB/PKCS1Padding");
-    rsa.init(Cipher.DECRYPT_MODE, this.privateKey);
-    return rsa.doFinal(msg);
-  }
-
-  private OperationResponse ProcessGetRequest(OperationRequest request) throws IOException {
-    Path path = Paths.get(request.getPath());
+  private OperationResponse ProcessGetRequest(OperationRequest request) {
+    Path path = Paths.get("path/to/file");
     byte[] data = Files.readAllBytes(path);
 
     OperationResponse  response = OperationResponse.newBuilder()
                                     .setKind(Kind.GET)
-                                    .setCode(OperationResponse.Status.OK)
                                     .setData(ByteString.of(data))
+                                    .setCode(OperationResponse.Status.OK)
                                     .build();
+
     return response;
   }
 
-  private OperationResponse ProcessPutRequest(OperationRequest request) throws IOException {
-    Path file = Paths.get(request.getPath());
+  private OperationResponse ProcessPutRequest(OperationRequest request) {
+    Path file = Paths.get("the-file-name");
     byte[] data = request.getData();
     Files.write(file, data);
-
-    return OperationResponse.newBuilder().setKind(Kind.PUT)
-                            .setCode(OperationResponse.Status.OK).build();
   }
 
 	// Constructor que tiene como parámetro una referencia al socket abierto en por otra clase
-	public Handler(Socket clientSocket, PrivateKey privateKey, PublicKey publicKey) {
-    this.serverPrivateKey = privateKey;
-    this.serverPublicKey = publicKey;
+	public Handler(Socket clientSocket) {
 		this.clientSocket = clientSocket;
 	}
 
@@ -88,53 +61,44 @@ public class Handler extends Thread implements Runnable {
 			inputStream = clientSocket.getInputStream();
 			outputStream = clientSocket.getOutputStream();
 
-      // Send Server public key
-      // NOTE: Quizas cuando se recibe tb este en B64 si esto lo esta
-      outputStream.write(this.serverPublicKey.getEncoded());
+      // TODO(Salva): Meter Logica para mandar mi clave publica
+      //              Abajo los parse from habria que hacerlos en "texto plano"
+      //              asi que habiar que pasarle a una funcion que lo haga
 
       /* Server state: Not Logged --> Must receive authentication */
       // Receive login message
       LoginRequest loginReq = LoginRequest.parseFrom(inputStream);
       LoginResponse loginRes;
 
-      // If user is invalid, exit. Else load client public RSA key
+      // If user is invalid, exit
       if (!ValidUser(loginReq.getUser(), loginReq.getPass())) {
         loginRes = LoginResponse.newBuilder().setCode(LoginResponse.Status.ERROR).build();
         loginRes.writeTo(outputStream);
-
         this.clientSocket.close();
         return;
       } else {
-        loadPublicKey(loginReq.getPublicKey());
         loginRes = LoginResponse.newBuilder().setCode(LoginResponse.Status.OK).build();
+        loginRes.writeTo(outputStream);
       }
 
       /* Server state: Waiting Req --> Must receive petitions */
       while (true) {
         OperationRequest request = OperationRequest.parseFrom(inputStream);
-        OperationResponse response;
 
         switch(request.getKind()) {
           case Kind.PUT:
-            response = ProcessPutRequest(request);
+            ProcessPutRequest(request);
             break;
           case Kind.GET:
-            response = ProcessGetRequest(request);
-            break;
-          default:
-            response = OperationResponse.newBuilder()
-                                          .setKind(request.getKind())
-                                          .setCode(OperationResponse.Status.ERROR)
-                                          .build();
+            ProcessGetRequest(request);
             break;
         }
       }
-
-      response.writeTo(outputStream);
 		} catch (IOException e) {
 			System.err.println(e.toString());
 		} catch (SocketException e) {
       this.clientSocket.close();
     }
+
 	}
 }
