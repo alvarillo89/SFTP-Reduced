@@ -39,6 +39,15 @@ public final class Login {
      */
     com.google.protobuf.ByteString
         getPassBytes();
+
+    /**
+     * <code>required bytes publicKey = 3;</code>
+     */
+    boolean hasPublicKey();
+    /**
+     * <code>required bytes publicKey = 3;</code>
+     */
+    com.google.protobuf.ByteString getPublicKey();
   }
   /**
    * Protobuf type {@code LoginRequest}
@@ -102,6 +111,11 @@ public final class Login {
               com.google.protobuf.ByteString bs = input.readBytes();
               bitField0_ |= 0x00000002;
               pass_ = bs;
+              break;
+            }
+            case 26: {
+              bitField0_ |= 0x00000004;
+              publicKey_ = input.readBytes();
               break;
             }
           }
@@ -228,9 +242,25 @@ public final class Login {
       }
     }
 
+    public static final int PUBLICKEY_FIELD_NUMBER = 3;
+    private com.google.protobuf.ByteString publicKey_;
+    /**
+     * <code>required bytes publicKey = 3;</code>
+     */
+    public boolean hasPublicKey() {
+      return ((bitField0_ & 0x00000004) == 0x00000004);
+    }
+    /**
+     * <code>required bytes publicKey = 3;</code>
+     */
+    public com.google.protobuf.ByteString getPublicKey() {
+      return publicKey_;
+    }
+
     private void initFields() {
       user_ = "";
       pass_ = "";
+      publicKey_ = com.google.protobuf.ByteString.EMPTY;
     }
     private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
@@ -246,6 +276,10 @@ public final class Login {
         memoizedIsInitialized = 0;
         return false;
       }
+      if (!hasPublicKey()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
       memoizedIsInitialized = 1;
       return true;
     }
@@ -258,6 +292,9 @@ public final class Login {
       }
       if (((bitField0_ & 0x00000002) == 0x00000002)) {
         output.writeBytes(2, getPassBytes());
+      }
+      if (((bitField0_ & 0x00000004) == 0x00000004)) {
+        output.writeBytes(3, publicKey_);
       }
       getUnknownFields().writeTo(output);
     }
@@ -275,6 +312,10 @@ public final class Login {
       if (((bitField0_ & 0x00000002) == 0x00000002)) {
         size += com.google.protobuf.CodedOutputStream
           .computeBytesSize(2, getPassBytes());
+      }
+      if (((bitField0_ & 0x00000004) == 0x00000004)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeBytesSize(3, publicKey_);
       }
       size += getUnknownFields().getSerializedSize();
       memoizedSerializedSize = size;
@@ -397,6 +438,8 @@ public final class Login {
         bitField0_ = (bitField0_ & ~0x00000001);
         pass_ = "";
         bitField0_ = (bitField0_ & ~0x00000002);
+        publicKey_ = com.google.protobuf.ByteString.EMPTY;
+        bitField0_ = (bitField0_ & ~0x00000004);
         return this;
       }
 
@@ -433,6 +476,10 @@ public final class Login {
           to_bitField0_ |= 0x00000002;
         }
         result.pass_ = pass_;
+        if (((from_bitField0_ & 0x00000004) == 0x00000004)) {
+          to_bitField0_ |= 0x00000004;
+        }
+        result.publicKey_ = publicKey_;
         result.bitField0_ = to_bitField0_;
         onBuilt();
         return result;
@@ -459,6 +506,9 @@ public final class Login {
           pass_ = other.pass_;
           onChanged();
         }
+        if (other.hasPublicKey()) {
+          setPublicKey(other.getPublicKey());
+        }
         this.mergeUnknownFields(other.getUnknownFields());
         return this;
       }
@@ -469,6 +519,10 @@ public final class Login {
           return false;
         }
         if (!hasPass()) {
+          
+          return false;
+        }
+        if (!hasPublicKey()) {
           
           return false;
         }
@@ -642,6 +696,41 @@ public final class Login {
   }
   bitField0_ |= 0x00000002;
         pass_ = value;
+        onChanged();
+        return this;
+      }
+
+      private com.google.protobuf.ByteString publicKey_ = com.google.protobuf.ByteString.EMPTY;
+      /**
+       * <code>required bytes publicKey = 3;</code>
+       */
+      public boolean hasPublicKey() {
+        return ((bitField0_ & 0x00000004) == 0x00000004);
+      }
+      /**
+       * <code>required bytes publicKey = 3;</code>
+       */
+      public com.google.protobuf.ByteString getPublicKey() {
+        return publicKey_;
+      }
+      /**
+       * <code>required bytes publicKey = 3;</code>
+       */
+      public Builder setPublicKey(com.google.protobuf.ByteString value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField0_ |= 0x00000004;
+        publicKey_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>required bytes publicKey = 3;</code>
+       */
+      public Builder clearPublicKey() {
+        bitField0_ = (bitField0_ & ~0x00000004);
+        publicKey_ = getDefaultInstance().getPublicKey();
         onChanged();
         return this;
       }
@@ -1172,11 +1261,11 @@ public final class Login {
       descriptor;
   static {
     java.lang.String[] descriptorData = {
-      "\n\013login.proto\"*\n\014LoginRequest\022\014\n\004user\030\001 " +
-      "\002(\t\022\014\n\004pass\030\002 \002(\t\"S\n\rLoginResponse\022#\n\004co" +
-      "de\030\001 \002(\0162\025.LoginResponse.Status\"\035\n\006Statu" +
-      "s\022\007\n\002OK\020\311\001\022\n\n\005ERROR\020\221\003B\022\n\tprotocolsB\005Log" +
-      "in"
+      "\n\013login.proto\"=\n\014LoginRequest\022\014\n\004user\030\001 " +
+      "\002(\t\022\014\n\004pass\030\002 \002(\t\022\021\n\tpublicKey\030\003 \002(\014\"S\n\r" +
+      "LoginResponse\022#\n\004code\030\001 \002(\0162\025.LoginRespo" +
+      "nse.Status\"\035\n\006Status\022\007\n\002OK\020\311\001\022\n\n\005ERROR\020\221" +
+      "\003B\022\n\tprotocolsB\005Login"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
         new com.google.protobuf.Descriptors.FileDescriptor.    InternalDescriptorAssigner() {
@@ -1195,7 +1284,7 @@ public final class Login {
     internal_static_LoginRequest_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessage.FieldAccessorTable(
         internal_static_LoginRequest_descriptor,
-        new java.lang.String[] { "User", "Pass", });
+        new java.lang.String[] { "User", "Pass", "PublicKey", });
     internal_static_LoginResponse_descriptor =
       getDescriptor().getMessageTypes().get(1);
     internal_static_LoginResponse_fieldAccessorTable = new

@@ -9,9 +9,13 @@ import java.io.InputStreamReader;
 import java.lang.Thread;
 import protocols.Operations.OperationRequest;
 import protocols.Operations.OperationResponse;
+import protocols.Operations.Kind;
 import protocols.Login.LoginRequest;
 import protocols.Login.LoginResponse;
-
+import protocols.Login.LoginRequest;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.nio.file.Path;
 
 public class Handler extends Thread implements Runnable {
 	private Socket clientSocket;
@@ -20,6 +24,25 @@ public class Handler extends Thread implements Runnable {
 
   private boolean ValidUser(String user, String password) {
       if (user == "lmao" && password == "lmao") return true;
+  }
+
+  private OperationResponse ProcessGetRequest(OperationRequest request) {
+    Path path = Paths.get("path/to/file");
+    byte[] data = Files.readAllBytes(path);
+
+    OperationResponse  response = OperationResponse.newBuilder()
+                                    .setKind(Kind.GET)
+                                    .setData(ByteString.of(data))
+                                    .setCode(OperationResponse.Status.OK)
+                                    .build();
+
+    return response;
+  }
+
+  private OperationResponse ProcessPutRequest(OperationRequest request) {
+    Path file = Paths.get("the-file-name");
+    byte[] data = request.getData();
+    Files.write(file, data);
   }
 
 	// Constructor que tiene como parámetro una referencia al socket abierto en por otra clase
@@ -37,9 +60,6 @@ public class Handler extends Thread implements Runnable {
 		try {
 			inputStream = clientSocket.getInputStream();
 			outputStream = clientSocket.getOutputStream();
-
-			// outPrinter = new PrintWriter(outputStream, true);
-			// inReader = new BufferedReader(new InputStreamReader(inputStream));
 
       // TODO(Salva): Meter Logica para mandar mi clave publica
       //              Abajo los parse from habria que hacerlos en "texto plano"
@@ -63,20 +83,19 @@ public class Handler extends Thread implements Runnable {
 
       /* Server state: Waiting Req --> Must receive petitions */
       while (true) {
-        OperationRequest request = OperationRequest.
-        
+        OperationRequest request = OperationRequest.parseFrom(inputStream);
 
-
+        switch(request.getKind()) {
+          case Kind.PUT:
+            ProcessPutRequest(request);
+            break;
+          case Kind.GET:
+            ProcessGetRequest(request);
+            break;
+        }
       }
-
-
-
-			outPrinter.println(respuesta);
-
-
-
 		} catch (IOException e) {
-			System.err.println("Error al obtener los flujso de entrada/salida.");
+			System.err.println(e.toString());
 		}
 
 	}

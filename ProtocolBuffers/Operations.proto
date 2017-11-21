@@ -1,14 +1,14 @@
 syntax = "proto2";
 
 option java_package = "protocols";
-option java_outer_classname = "GetData";
+option java_outer_classname = "Operations";
 
 enum Kind {
   PUT = 0;
   GET = 1;
 }
 
-message OperationRequest() {
+message OperationRequest {
   required Kind kind = 1;
   optional string path = 2; // If get
   optional bytes data = 3;  // If post
@@ -16,10 +16,8 @@ message OperationRequest() {
 
 message OperationResponse {
   enum Status {
-    GET_OK = 202;
-    PUT_OK = 203;
-    GET_ERROR = 402;
-    PUT_ERROR = 403;
+    OK = 200;
+    ERROR = 400;
   }
 
   required Kind kind = 1;
