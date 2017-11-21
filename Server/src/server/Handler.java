@@ -3,9 +3,6 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.Socket;
 import java.util.Random;
-import java.io.BufferedReader;
-import java.io.PrintWriter;
-import java.io.InputStreamReader;
 import java.lang.Thread;
 import protocols.Operations.OperationRequest;
 import protocols.Operations.OperationResponse;
@@ -27,7 +24,7 @@ public class Handler extends Thread implements Runnable {
 	private OutputStream outputStream;
 
   private boolean ValidUser(String user, String password) {
-      if (user == "lmao" && password == "lmao") return true;
+      return (user == "lmao" && password == "lmao");
   }
 
   public void loadPublicKey(String key) throws GeneralSecurityException, IOException {
@@ -37,13 +34,13 @@ public class Handler extends Thread implements Runnable {
     this.clientPublicKey = fact.generatePublic(spec);
    }
 
-  private static byte[] encrypt(byte[] msg){
+  private byte[] encrypt(byte[] msg){
     Cipher rsa = Cipher.getInstance("RSA/ECB/PKCS1Padding");
     rsa.init(Cipher.ENCRYPT_MODE, this.publicKey);
     return rsa.doFinal(msg);
   }
 
-  private static byte[] decrypt(byte[] msg){
+  private byte[] decrypt(byte[] msg){
     Cipher rsa = Cipher.getInstance("RSA/ECB/PKCS1Padding");
     rsa.init(Cipher.DECRYPT_MODE, this.privateKey);
     return rsa.doFinal(msg);
@@ -94,7 +91,8 @@ public class Handler extends Thread implements Runnable {
 
       /* Server state: Not Logged --> Must receive authentication */
       // Receive login message
-      LoginRequest loginReq = LoginRequest.parseFrom(inputStream);
+      // TODO: Recibir bytes cifrados
+      LoginRequest loginReq = LoginRequest.parseFrom(inputStream);  // NOTE: Deberia parsear desde los bytes descifrados
       LoginResponse loginRes;
 
       // If user is invalid, exit. Else load client public RSA key
@@ -111,14 +109,15 @@ public class Handler extends Thread implements Runnable {
 
       /* Server state: Waiting Req --> Must receive petitions */
       while (true) {
+        // TODO: Recibir bytes cifrados
         OperationRequest request = OperationRequest.parseFrom(inputStream);
-        OperationResponse response;
+        OperationResponse resp;
 
         switch(request.getKind()) {
-          case Kind.PUT:
+          case Operations.Kind.GET:
             response = ProcessPutRequest(request);
             break;
-          case Kind.GET:
+          case Operations.Kind.GET:
             response = ProcessGetRequest(request);
             break;
           default:
@@ -126,11 +125,14 @@ public class Handler extends Thread implements Runnable {
                                           .setKind(request.getKind())
                                           .setCode(OperationResponse.Status.ERROR)
                                           .build();
+
             break;
         }
       }
 
-      response.writeTo(outputStream);
+      // Crypt and send
+      byte[] cryptData = encrypt(response.toByteArray());
+      outputStream.write(cryptData);
 		} catch (IOException e) {
 			System.err.println(e.toString());
 		} catch (SocketException e) {
