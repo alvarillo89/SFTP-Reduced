@@ -133,10 +133,11 @@ public class Handler extends Thread implements Runnable {
       // Crypt and send
       byte[] cryptData = encrypt(response.toByteArray());
       outputStream.write(cryptData);
-		} catch (IOException e) {
-			System.err.println(e.toString());
 		} catch (SocketException e) {
+      System.out.println("[-] Connection lost with " + this.clientSocket.toString());
       this.clientSocket.close();
+    } catch (Exception e) {
+      System.out.println("[!] " + e.toString());
     }
 	}
 }
