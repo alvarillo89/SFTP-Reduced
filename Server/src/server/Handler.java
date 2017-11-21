@@ -96,7 +96,9 @@ public class Handler extends Thread implements Runnable {
       }
 		} catch (IOException e) {
 			System.err.println(e.toString());
-		}
+		} catch (SocketException e) {
+      this.clientSocket.close();
+    }
 
 	}
 }
