@@ -24,24 +24,24 @@ public class Client {
 		ByteArrayOutputStream dynamicBuffer = new ByteArrayOutputStream();
 		byte[] buffer = new byte[bufferSize];
 		int read = 0;
-	
+
 		while ((read = input.read(buffer)) >= bufferSize) {
 		  dynamicBuffer.write(buffer, 0, read);
 		}
-	
+
 		return dynamicBuffer.toByteArray();
 	}
 
 	//Return a encrypted byte array:
 	public static byte[] Encrypt(byte[] msg, PublicKey publicKey) throws Exception{
-		Cipher rsa = Cipher.getInstance("RSA/ECB/PKCS1Padding");
+		Cipher rsa = Cipher.getInstance("RSA");
 		rsa.init(Cipher.ENCRYPT_MODE, publicKey);
 		return rsa.doFinal(msg);
 	}
 
 	//Return a decrypted byte array:
 	public static byte[] Decrypt(byte[] msg, PrivateKey privateKey) throws Exception{
-		Cipher rsa = Cipher.getInstance("RSA/ECB/PKCS1Padding");
+		Cipher rsa = Cipher.getInstance("RSA");
 		rsa.init(Cipher.DECRYPT_MODE, privateKey);
 		return rsa.doFinal(msg);
 	}
@@ -49,7 +49,7 @@ public class Client {
 	//Load a Public Key from Byte Array:
 	public static PublicKey LoadPublicKey(byte[] key) throws GeneralSecurityException, IOException {
 		X509EncodedKeySpec spec = new X509EncodedKeySpec(key);
-		KeyFactory fact = KeyFactory.getInstance("RSA/ECB/PKCS1Padding");
+		KeyFactory fact = KeyFactory.getInstance("RSA");
 		return fact.generatePublic(spec);
 	}
 
@@ -61,7 +61,7 @@ public class Client {
 
 
 	public static void main(String[] args) {
-		
+
 		//Host name and port:
 		String host = "localhost";
 		int port = 31416;
@@ -69,7 +69,7 @@ public class Client {
 		//User and Password:
 		String user = "";
 		String psswd = "";
-	
+
 		try{
 			System.out.println("Wellcome to SFTP-R");
 			System.out.println("Version 1.0");
@@ -88,7 +88,7 @@ public class Client {
 			Scanner sc = new Scanner(System.in);
 			System.out.print("Enter User: ");
 			user = sc.next();
-			Console cnsl = System.console();			
+			Console cnsl = System.console();
 			char[] pwd = cnsl.readPassword("Enter Password: ");
 			psswd = new String(pwd);
 
@@ -125,17 +125,17 @@ public class Client {
 
 			System.out.println("Done!");
 			System.out.println("****************************");
-			
+
 			String command = "";
 
 			while(!command.equals("quit")){
-				
+
 				System.out.print("SFTP-R> ");
 				command = sc.nextLine();
 
 				if(!command.equals("quit")){
 					String [] parts = command.trim().split("\\s+");
-					
+
 					if(parts[0].equals("get") && parts.length == 3){
 						//GET....
 						Operation getREQ = new Operation();
@@ -157,7 +157,7 @@ public class Client {
 						}
 						else
 							System.err.println("[**GET ERROR**]");
-					} 
+					}
 					else if(parts[0].equals("put") && parts.length == 3){
 						//PUT..
 						Path path = Paths.get(parts[1]);
@@ -182,10 +182,10 @@ public class Client {
 					else{
 						System.err.println("[**ERROR**]: Unknown Command");
 					}
-				
+
 				}
 			}
-			
+
 			//Close Elements:
 			sc.close();
 			socket.close();

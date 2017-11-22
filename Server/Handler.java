@@ -39,14 +39,14 @@ public class Handler extends Thread implements Runnable {
   public void loadPublicKey(String key) throws GeneralSecurityException, IOException {
     byte[] data = Base64.getDecoder().decode((key.getBytes()));
     X509EncodedKeySpec spec = new X509EncodedKeySpec(data);
-    KeyFactory fact = KeyFactory.getInstance("RSA/ECB/PKCS1Padding");
+    KeyFactory fact = KeyFactory.getInstance("RSA");
     this.clientPublicKey = fact.generatePublic(spec);
    }
 
   private byte[] Encrypt(byte[] msg) throws NoSuchAlgorithmException, NoSuchPaddingException,
                                             InvalidKeyException, IllegalBlockSizeException,
                                             BadPaddingException {
-    Cipher rsa = Cipher.getInstance("RSA/ECB/PKCS1Padding");
+    Cipher rsa = Cipher.getInstance("RSA");
     rsa.init(Cipher.ENCRYPT_MODE, this.clientPublicKey);
     return rsa.doFinal(msg);
   }
@@ -54,7 +54,7 @@ public class Handler extends Thread implements Runnable {
   private byte[] Decrypt(byte[] msg) throws NoSuchAlgorithmException, NoSuchPaddingException,
                                             InvalidKeyException, IllegalBlockSizeException,
                                             BadPaddingException {
-    Cipher rsa = Cipher.getInstance("RSA/ECB/PKCS1Padding");
+    Cipher rsa = Cipher.getInstance("RSA");
     rsa.init(Cipher.DECRYPT_MODE, this.serverPrivateKey);
     return rsa.doFinal(msg);
   }
