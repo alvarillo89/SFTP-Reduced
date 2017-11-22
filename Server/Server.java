@@ -4,13 +4,15 @@ import java.io.OutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.lang.Thread;
+import java.security.*;
+import javax.crypto.Cipher;
+import server.*;
 
-public class ServerFTP {
+public class Server {
 
 	public static void main(String[] args) {
 		ServerSocket serverSocket;
-		Socket socketServicio;
-		Hebrita hebrita;
+		Socket clientSocket;
 
 		// Puerto de escucha PI
 		final int port = 31416;

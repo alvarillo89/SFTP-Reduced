@@ -4,16 +4,13 @@ import java.io.OutputStream;
 import java.net.Socket;
 import java.util.Random;
 import java.lang.Thread;
-import protocols.Operations.OperationRequest;
-import protocols.Operations.OperationResponse;
-import protocols.Operations.Kind;
-import protocols.Login.LoginResponse;
-import protocols.Login.LoginRequest;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.Path;
 import java.security.*;
 import javax.crypto.Cipher;
+import java.io.ByteArrayOutputStream;
+
 
 public class Handler extends Thread implements Runnable {
 	private Socket clientSocket;
@@ -27,6 +24,19 @@ public class Handler extends Thread implements Runnable {
       return (user == "lmao" && password == "lmao");
   }
 
+  private byte[] ReceiveTillEnd(InputStream input) {
+    final int bufferSize = 1024;
+    ByteArrayOutputStream dynamicBuffer = new ByteArrayOutputStream();
+    byte[] buffer = new byte[bufferSize];
+    int read = 0;
+
+    while ((read = input.read(buffer)) >= bufferSize) {
+      dynamicBuffer.write(buffer, 0, read);
+    }
+
+    return dynamicBuffer.toByteArray();
+  }
+
   public void loadPublicKey(String key) throws GeneralSecurityException, IOException {
     byte[] data = Base64.getDecoder().decode((key.getBytes()));
     X509EncodedKeySpec spec = new X509EncodedKeySpec(data);
@@ -34,15 +44,15 @@ public class Handler extends Thread implements Runnable {
     this.clientPublicKey = fact.generatePublic(spec);
    }
 
-  private byte[] encrypt(byte[] msg){
+  private byte[] Encrypt(byte[] msg){
     Cipher rsa = Cipher.getInstance("RSA/ECB/PKCS1Padding");
-    rsa.init(Cipher.ENCRYPT_MODE, this.publicKey);
+    rsa.init(Cipher.ENCRYPT_MODE, this.clientPublicKey);
     return rsa.doFinal(msg);
   }
 
-  private byte[] decrypt(byte[] msg){
+  private byte[] Decrypt(byte[] msg){
     Cipher rsa = Cipher.getInstance("RSA/ECB/PKCS1Padding");
-    rsa.init(Cipher.DECRYPT_MODE, this.privateKey);
+    rsa.init(Cipher.DECRYPT_MODE, this.serverPrivateKey);
     return rsa.doFinal(msg);
   }
 
@@ -80,6 +90,8 @@ public class Handler extends Thread implements Runnable {
 		PrintWriter outPrinter;
 		BufferedReader inReader;
 		String datos;
+    byte[] dataReceive;
+    byte[] dataSend;
 
 		try {
 			inputStream = clientSocket.getInputStream();
@@ -91,8 +103,9 @@ public class Handler extends Thread implements Runnable {
 
       /* Server state: Not Logged --> Must receive authentication */
       // Receive login message
-      // TODO: Recibir bytes cifrados
-      LoginRequest loginReq = LoginRequest.parseFrom(inputStream);  // NOTE: Deberia parsear desde los bytes descifrados
+      data = ReceiveTillEnd(inputStream);
+      data = Decrypt(data);
+      LoginRequest loginReq = LoginRequest.parseFrom(data);  // NOTE: Deberia parsear desde los bytes descifrados
       LoginResponse loginRes;
 
       // If user is invalid, exit. Else load client public RSA key
@@ -105,12 +118,18 @@ public class Handler extends Thread implements Runnable {
       } else {
         loadPublicKey(loginReq.getPublicKey());
         loginRes = LoginResponse.newBuilder().setCode(LoginResponse.Status.OK).build();
+
+        // Encrypt and send
+        dataSend = Encrypt(loginRes.toByteArray());
+        outputStream.write(dataSend);
       }
 
       /* Server state: Waiting Req --> Must receive petitions */
       while (true) {
         // TODO: Recibir bytes cifrados
-        OperationRequest request = OperationRequest.parseFrom(inputStream);
+        data = DecryptReceiveTillEnd(inputStream);
+        data = Decrypt(data);
+        OperationRequest request = OperationRequest.parseFrom(data);
         OperationResponse resp;
 
         switch(request.getKind()) {
@@ -128,11 +147,12 @@ public class Handler extends Thread implements Runnable {
 
             break;
         }
+
+        // Crypt and send
+        dataSend = Encrypt(response.toByteArray());
+        outputStream.write(dataSend);
       }
 
-      // Crypt and send
-      byte[] cryptData = encrypt(response.toByteArray());
-      outputStream.write(cryptData);
 		} catch (SocketException e) {
       System.out.println("[-] Connection lost with " + this.clientSocket.toString());
       this.clientSocket.close();
