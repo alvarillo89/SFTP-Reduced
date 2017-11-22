@@ -2,12 +2,12 @@ import java.io.*;
 
 public class Login implements Serializable {
   public int code;
-  public String login;
+  public String user;
   public String pass;
   public String pubKey;
 
 
-  public static byte[] Serizalice(Object obj){
+  public static byte[] Serialize(Object obj){
     try (ByteArrayOutputStream bos = new ByteArrayOutputStream();
       ObjectOutput out = new ObjectOutputStream(bos)) {
       out.writeObject(obj);
@@ -18,7 +18,7 @@ public class Login implements Serializable {
     }
   }
 
-  public static Login Deserialice(byte[] bytes) {
+  public static Login Deserialize(byte[] bytes) {
     try (ByteArrayInputStream bis = new ByteArrayInputStream(bytes);
       ObjectInput in = new ObjectInputStream(bis)) {
       Login out = Login.class.cast(in.readObject());

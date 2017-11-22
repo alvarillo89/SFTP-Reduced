@@ -8,9 +8,10 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.Path;
 import java.security.*;
+import java.util.Base64;
+import java.security.spec.X509EncodedKeySpec;
 import javax.crypto.Cipher;
 import java.io.ByteArrayOutputStream;
-
 
 public class Handler extends Thread implements Runnable {
 	private Socket clientSocket;
@@ -56,25 +57,31 @@ public class Handler extends Thread implements Runnable {
     return rsa.doFinal(msg);
   }
 
-  private OperationResponse ProcessGetRequest(OperationRequest request) throws IOException {
-    Path path = Paths.get(request.getPath());
+  private Operation ProcessGetRequest(Operation request) throws IOException {
+    Path path = Paths.get(request.path);
     byte[] data = Files.readAllBytes(path);
 
-    OperationResponse  response = OperationResponse.newBuilder()
-                                    .setKind(Kind.GET)
-                                    .setCode(OperationResponse.Status.OK)
-                                    .setData(ByteString.of(data))
-                                    .build();
+    Operation response = new Operation();
+    response.code = 200;
+    response.kind = request.kind;
+    response.path = request.path;
+    response.data = data;
+
     return response;
   }
 
-  private OperationResponse ProcessPutRequest(OperationRequest request) throws IOException {
-    Path file = Paths.get(request.getPath());
-    byte[] data = request.getData();
+  private Operation ProcessPutRequest(Operation request) throws IOException {
+    Path file = Paths.get(request.path);
+    byte[] data = request.data;
     Files.write(file, data);
 
-    return OperationResponse.newBuilder().setKind(Kind.PUT)
-                            .setCode(OperationResponse.Status.OK).build();
+    Operation response = new Operation();
+    response.code = 200;
+    response.kind = request.kind;
+    response.path = request.path;
+    response.data = new byte[0];
+
+    return response;
   }
 
 	// Constructor que tiene como parámetro una referencia al socket abierto en por otra clase
@@ -87,8 +94,6 @@ public class Handler extends Thread implements Runnable {
 
 	// Aquí es donde se realiza el procesamiento realmente:
 	public void run() {
-		PrintWriter outPrinter;
-		BufferedReader inReader;
 		String datos;
     byte[] dataReceive;
     byte[] dataSend;
@@ -103,53 +108,52 @@ public class Handler extends Thread implements Runnable {
 
       /* Server state: Not Logged --> Must receive authentication */
       // Receive login message
-      data = ReceiveTillEnd(inputStream);
-      data = Decrypt(data);
-      LoginRequest loginReq = LoginRequest.parseFrom(data);  // NOTE: Deberia parsear desde los bytes descifrados
-      LoginResponse loginRes;
+      dataReceive = ReceiveTillEnd(inputStream);
+      dataReceive = Decrypt(dataReceive);
+      Login loginReq = Login.Deserialize(dataReceive);
+      Login loginRes = new Login();
 
       // If user is invalid, exit. Else load client public RSA key
-      if (!ValidUser(loginReq.getUser(), loginReq.getPass())) {
-        loginRes = LoginResponse.newBuilder().setCode(LoginResponse.Status.ERROR).build();
-        loginRes.writeTo(outputStream);
+      if (!ValidUser(loginReq.user, loginReq.pass) || loginReq == null) {
+        loginRes.code = 400;
 
+        Encrypt(Login.Serialize(loginRes));
+        outputStream.write(dataSend);
         this.clientSocket.close();
         return;
       } else {
-        loadPublicKey(loginReq.getPublicKey());
-        loginRes = LoginResponse.newBuilder().setCode(LoginResponse.Status.OK).build();
+        loadPublicKey(loginReq.pubKey); // Load client public key
+        loginRes.code = 200;
 
-        // Encrypt and send
-        dataSend = Encrypt(loginRes.toByteArray());
+        Encrypt(Login.Serialize(loginRes));
         outputStream.write(dataSend);
       }
 
       /* Server state: Waiting Req --> Must receive petitions */
       while (true) {
         // TODO: Recibir bytes cifrados
-        data = DecryptReceiveTillEnd(inputStream);
-        data = Decrypt(data);
-        OperationRequest request = OperationRequest.parseFrom(data);
-        OperationResponse resp;
+        dataReceive = Decrypt(ReceiveTillEnd(inputStream));
+        Operation request = Operation.Deserialize(dataReceive);
+        Operation response = new Operation();
 
-        switch(request.getKind()) {
-          case Operations.Kind.GET:
+        // If object couldnt be deserialiced, throw out this packet
+        if (request == null) continue;
+
+        switch(request.kind) {
+          case Operation.Kind.Put:
             response = ProcessPutRequest(request);
             break;
-          case Operations.Kind.GET:
+          case Operation.Kind.Get:
             response = ProcessGetRequest(request);
             break;
           default:
-            response = OperationResponse.newBuilder()
-                                          .setKind(request.getKind())
-                                          .setCode(OperationResponse.Status.ERROR)
-                                          .build();
-
+            response.kind = request.kind;
+            response.code = 400;
             break;
         }
 
         // Crypt and send
-        dataSend = Encrypt(response.toByteArray());
+        dataSend = Encrypt(Operation.Serialize(response));
         outputStream.write(dataSend);
       }
 
