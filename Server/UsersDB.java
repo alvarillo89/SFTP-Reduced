@@ -8,11 +8,11 @@ public class UsersDB {
 
   public UsersDB() {
     this.creedentials = new HashMap<String, String>();
-    this.creedentials.put("Salva", "1234");
-    this.creedentials.put("Alvaro", "1234");
+    this.creedentials.put("salva", "1234");
+    this.creedentials.put("alvaro", "1234");
   }
 
   public boolean ValidCredentials(String user, String password) {
-    return (this.creedentials.get(user) == password);
+    return (this.creedentials.getOrDefault(user, null) == password);
   }
 }

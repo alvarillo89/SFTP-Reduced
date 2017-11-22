@@ -121,11 +121,9 @@ public void run() {
     outputStream = clientSocket.getOutputStream();
 
     // Send Server public key and receive simetric key
-    // NOTE: Quizas cuando se recibe tb este en B64 si esto lo esta
     outputStream.write(this.serverPublicKey.getEncoded());
     dataReceive = DecryptAssymetric(ReceiveTillEnd(inputStream));
     this.symmetricKey = new SecretKeySpec(dataReceive , 0, dataReceive.length, "AES");
-
 
     /* Server state: Not Logged --> Must receive authentication */
     // Receive login message
@@ -135,7 +133,8 @@ public void run() {
     Login loginRes = new Login();
 
     // If user is invalid, exit. Else load client public RSA key
-    if (usersDatabase.ValidCredentials(loginReq.user, loginReq.pass) || loginReq == null) {
+    if (loginReq == null || !usersDatabase.ValidCredentials(loginReq.user, loginReq.pass)) {
+      System.out.println("aaaaaa");
       loginRes.code = 400;
 
       dataSend = Encrypt(Login.Serialize(loginRes));
