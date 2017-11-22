@@ -21,10 +21,7 @@ public class Handler extends Thread implements Runnable {
   private PublicKey clientPublicKey;
 	private InputStream inputStream;
 	private OutputStream outputStream;
-
-  private boolean ValidUser(String user, String password) {
-      return (user == "lmao" && password == "lmao");
-  }
+  private UsersDB usersDatabase;
 
   private byte[] ReceiveTillEnd(InputStream input) throws IOException {
     final int bufferSize = 1024;
@@ -90,12 +87,12 @@ public class Handler extends Thread implements Runnable {
   }
 
 	// Constructor que tiene como parámetro una referencia al socket abierto en por otra clase
-	public Handler(Socket clientSocket, PrivateKey privateKey, PublicKey publicKey) {
+	public Handler(UsersDB database, Socket clientSocket, PrivateKey privateKey, PublicKey publicKey) {
     this.serverPrivateKey = privateKey;
     this.serverPublicKey = publicKey;
 		this.clientSocket = clientSocket;
+    this.usersDatabase = database;
 	}
-
 
 	// Aquí es donde se realiza el procesamiento realmente:
 	public void run() {
@@ -119,7 +116,7 @@ public class Handler extends Thread implements Runnable {
       Login loginRes = new Login();
 
       // If user is invalid, exit. Else load client public RSA key
-      if (!ValidUser(loginReq.user, loginReq.pass) || loginReq == null) {
+      if (usersDatabase.ValidCredentials(loginReq.user, loginReq.pass) || loginReq == null) {
         loginRes.code = 400;
 
         dataSend = Encrypt(Login.Serialize(loginRes));
