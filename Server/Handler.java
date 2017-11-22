@@ -10,8 +10,9 @@ import java.nio.file.Path;
 import java.security.*;
 import java.util.Base64;
 import java.security.spec.X509EncodedKeySpec;
-import javax.crypto.Cipher;
+import javax.crypto.*;
 import java.io.ByteArrayOutputStream;
+import java.net.SocketException;
 
 public class Handler extends Thread implements Runnable {
 	private Socket clientSocket;
@@ -25,7 +26,7 @@ public class Handler extends Thread implements Runnable {
       return (user == "lmao" && password == "lmao");
   }
 
-  private byte[] ReceiveTillEnd(InputStream input) {
+  private byte[] ReceiveTillEnd(InputStream input) throws IOException {
     final int bufferSize = 1024;
     ByteArrayOutputStream dynamicBuffer = new ByteArrayOutputStream();
     byte[] buffer = new byte[bufferSize];
@@ -45,13 +46,17 @@ public class Handler extends Thread implements Runnable {
     this.clientPublicKey = fact.generatePublic(spec);
    }
 
-  private byte[] Encrypt(byte[] msg){
+  private byte[] Encrypt(byte[] msg) throws NoSuchAlgorithmException, NoSuchPaddingException,
+                                            InvalidKeyException, IllegalBlockSizeException,
+                                            BadPaddingException {
     Cipher rsa = Cipher.getInstance("RSA/ECB/PKCS1Padding");
     rsa.init(Cipher.ENCRYPT_MODE, this.clientPublicKey);
     return rsa.doFinal(msg);
   }
 
-  private byte[] Decrypt(byte[] msg){
+  private byte[] Decrypt(byte[] msg) throws NoSuchAlgorithmException, NoSuchPaddingException,
+                                            InvalidKeyException, IllegalBlockSizeException,
+                                            BadPaddingException {
     Cipher rsa = Cipher.getInstance("RSA/ECB/PKCS1Padding");
     rsa.init(Cipher.DECRYPT_MODE, this.serverPrivateKey);
     return rsa.doFinal(msg);
@@ -117,7 +122,7 @@ public class Handler extends Thread implements Runnable {
       if (!ValidUser(loginReq.user, loginReq.pass) || loginReq == null) {
         loginRes.code = 400;
 
-        Encrypt(Login.Serialize(loginRes));
+        dataSend = Encrypt(Login.Serialize(loginRes));
         outputStream.write(dataSend);
         this.clientSocket.close();
         return;
@@ -125,7 +130,7 @@ public class Handler extends Thread implements Runnable {
         loadPublicKey(loginReq.pubKey); // Load client public key
         loginRes.code = 200;
 
-        Encrypt(Login.Serialize(loginRes));
+        dataSend = Encrypt(Login.Serialize(loginRes));
         outputStream.write(dataSend);
       }
 
@@ -140,10 +145,10 @@ public class Handler extends Thread implements Runnable {
         if (request == null) continue;
 
         switch(request.kind) {
-          case Operation.Kind.Put:
+          case Put:
             response = ProcessPutRequest(request);
             break;
-          case Operation.Kind.Get:
+          case Get:
             response = ProcessGetRequest(request);
             break;
           default:
@@ -158,8 +163,13 @@ public class Handler extends Thread implements Runnable {
       }
 
 		} catch (SocketException e) {
-      System.out.println("[-] Connection lost with " + this.clientSocket.toString());
-      this.clientSocket.close();
+      System.err.println("[-] Connection lost with " + this.clientSocket.toString());
+      try {
+        this.clientSocket.close();
+      } catch (IOException ioe) {
+        System.err.println("[!] " + ioe.toString());
+      }
+
     } catch (Exception e) {
       System.out.println("[!] " + e.toString());
     }

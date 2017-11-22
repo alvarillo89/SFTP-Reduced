@@ -1,6 +1,7 @@
 import java.io.*;
 
 public class Operation implements Serializable{
+  private static final long serialVersionUID = 7462746372818764178L;
   public int code;
   public Kind kind;
   public String path;
@@ -34,22 +35,4 @@ public class Operation implements Serializable{
         return null;
       }
   }
-
-  // public static void main(String[] args) {
-  //   Operation operation = new Operation();
-  //   operation.kind = Kind.Get;
-  //   operation.code = 200;
-  //   operation.path = "/home/salva/archivo.txt";
-  //   operation.data = "Helloooo".getBytes();
-  //
-  //   try{
-  //     byte[] serializado = Operation.Serizalice(operation);
-  //     Object msg2 = Operation.Deserialice(serializado);
-  //     Operation msg = Operation.class.cast(msg2);
-  //
-  //     System.out.print(msg.code + "\n" + msg.kind + "\n" +  msg.path + "\n" + msg.data + "\n");
-  //   } catch(Exception e){
-  //   }
-  // }
-
 }

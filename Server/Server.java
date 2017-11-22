@@ -5,7 +5,7 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.lang.Thread;
 import java.security.*;
-import javax.crypto.Cipher;
+import javax.crypto.*;
 
 public class Server {
 
@@ -16,12 +16,12 @@ public class Server {
 		// Puerto de escucha PI
 		final int port = 31416;
 
-    KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance("RSA");
-    KeyPair keyPair = keyPairGenerator.generateKeyPair();
-    PublicKey publicKey = keyPair.getPublic();
-    PrivateKey privateKey = keyPair.getPrivate();
-
 		try {
+      KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance("RSA");
+      KeyPair keyPair = keyPairGenerator.generateKeyPair();
+      PublicKey publicKey = keyPair.getPublic();
+      PrivateKey privateKey = keyPair.getPrivate();
+
 			serverSocket = new ServerSocket(port);
 
 			while (true) {
@@ -32,7 +32,9 @@ public class Server {
 			}
 
 		} catch (IOException e) {
-			System.err.println("Error al escuchar en el puerto "+port);
-		}
+			System.err.println("[!] Error binding to port " + port);
+		} catch (NoSuchAlgorithmException noAlg) {
+      System.err.println("[!] Cannot generate RSA Keys");
+    }
 	}
 }

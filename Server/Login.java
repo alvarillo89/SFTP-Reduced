@@ -1,6 +1,7 @@
 import java.io.*;
 
 public class Login implements Serializable {
+  private static final long serialVersionUID = 7662746382818912479L;
   public int code;
   public String user;
   public String pass;
