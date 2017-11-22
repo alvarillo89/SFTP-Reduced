@@ -11,13 +11,13 @@ javac Protocols/*.java
 ######## Server Compilation ########
 # Compile files and create jar
 javac Server/*.java -cp Protocols/
-jar cvfm Server.jar Server/manifest.mf Server/*.class
+jar cvfm Server.jar Server/manifest.mf -C Server/ .
 
 
 ######## Client Compilation ########
 # Compile files and create jar
 javac Client/*.java -cp Protocols/
-jar cvfm Client.jar Client/manifest.mf Client/*.class
+jar cvfm Client.jar Client/manifest.mf -C Client/ .
 
 
 # Instructions
