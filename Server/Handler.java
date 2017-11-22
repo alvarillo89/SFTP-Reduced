@@ -15,12 +15,12 @@ import java.io.ByteArrayOutputStream;
 import java.net.SocketException;
 
 public class Handler extends Thread implements Runnable {
-	private Socket clientSocket;
+  private Socket clientSocket;
   private PrivateKey serverPrivateKey;
   private PublicKey serverPublicKey;
   private PublicKey clientPublicKey;
-	private InputStream inputStream;
-	private OutputStream outputStream;
+  private InputStream inputStream;
+  private OutputStream outputStream;
   private UsersDB usersDatabase;
 
   private byte[] ReceiveTillEnd(InputStream input) throws IOException {
@@ -90,85 +90,84 @@ public class Handler extends Thread implements Runnable {
 	public Handler(UsersDB database, Socket clientSocket, PrivateKey privateKey, PublicKey publicKey) {
     this.serverPrivateKey = privateKey;
     this.serverPublicKey = publicKey;
-		this.clientSocket = clientSocket;
+    this.clientSocket = clientSocket;
     this.usersDatabase = database;
 	}
 
 	// Aquí es donde se realiza el procesamiento realmente:
-	public void run() {
-		String datos;
-    byte[] dataReceive;
-    byte[] dataSend;
+public void run() {
+  String datos;
+  byte[] dataReceive;
+  byte[] dataSend;
 
-		try {
-			inputStream = clientSocket.getInputStream();
-			outputStream = clientSocket.getOutputStream();
+  try {
+    inputStream = clientSocket.getInputStream();
+    outputStream = clientSocket.getOutputStream();
 
-      // Send Server public key
-      // NOTE: Quizas cuando se recibe tb este en B64 si esto lo esta
-      outputStream.write(this.serverPublicKey.getEncoded());
+    // Send Server public key
+    // NOTE: Quizas cuando se recibe tb este en B64 si esto lo esta
+    outputStream.write(this.serverPublicKey.getEncoded());
 
-      /* Server state: Not Logged --> Must receive authentication */
-      // Receive login message
-      dataReceive = ReceiveTillEnd(inputStream);
-      dataReceive = Decrypt(dataReceive);
-      Login loginReq = Login.Deserialize(dataReceive);
-      Login loginRes = new Login();
+    /* Server state: Not Logged --> Must receive authentication */
+    // Receive login message
+    dataReceive = ReceiveTillEnd(inputStream);
+    dataReceive = Decrypt(dataReceive);
+    Login loginReq = Login.Deserialize(dataReceive);
+    Login loginRes = new Login();
 
-      // If user is invalid, exit. Else load client public RSA key
-      if (usersDatabase.ValidCredentials(loginReq.user, loginReq.pass) || loginReq == null) {
-        loginRes.code = 400;
+    // If user is invalid, exit. Else load client public RSA key
+    if (usersDatabase.ValidCredentials(loginReq.user, loginReq.pass) || loginReq == null) {
+      loginRes.code = 400;
 
-        dataSend = Encrypt(Login.Serialize(loginRes));
-        outputStream.write(dataSend);
-        this.clientSocket.close();
-        return;
-      } else {
-        loadPublicKey(loginReq.pubKey); // Load client public key
-        loginRes.code = 200;
+      dataSend = Encrypt(Login.Serialize(loginRes));
+      outputStream.write(dataSend);
+      this.clientSocket.close();
+      return;
+    } else {
+      loadPublicKey(loginReq.pubKey); // Load client public key
+      loginRes.code = 200;
 
-        dataSend = Encrypt(Login.Serialize(loginRes));
-        outputStream.write(dataSend);
+      dataSend = Encrypt(Login.Serialize(loginRes));
+      outputStream.write(dataSend);
+    }
+
+    /* Server state: Waiting Req --> Must receive petitions */
+    while (true) {
+      dataReceive = Decrypt(ReceiveTillEnd(inputStream));
+      Operation request = Operation.Deserialize(dataReceive);
+      Operation response = new Operation();
+
+      // If object couldnt be deserialiced, throw out this packet
+      if (request == null) continue;
+
+      switch(request.kind) {
+        case Put:
+          response = ProcessPutRequest(request);
+          break;
+        case Get:
+          response = ProcessGetRequest(request);
+          break;
+        default:
+          response.kind = request.kind;
+          response.code = 400;
+          break;
       }
 
-      /* Server state: Waiting Req --> Must receive petitions */
-      while (true) {
-        // TODO: Recibir bytes cifrados
-        dataReceive = Decrypt(ReceiveTillEnd(inputStream));
-        Operation request = Operation.Deserialize(dataReceive);
-        Operation response = new Operation();
+      // Crypt and send
+      dataSend = Encrypt(Operation.Serialize(response));
+      outputStream.write(dataSend);
+    }
 
-        // If object couldnt be deserialiced, throw out this packet
-        if (request == null) continue;
-
-        switch(request.kind) {
-          case Put:
-            response = ProcessPutRequest(request);
-            break;
-          case Get:
-            response = ProcessGetRequest(request);
-            break;
-          default:
-            response.kind = request.kind;
-            response.code = 400;
-            break;
-        }
-
-        // Crypt and send
-        dataSend = Encrypt(Operation.Serialize(response));
-        outputStream.write(dataSend);
-      }
-
-		} catch (SocketException e) {
+    } catch (SocketException e) {
       System.err.println("[-] Connection lost with " + this.clientSocket.toString());
+
       try {
         this.clientSocket.close();
       } catch (IOException ioe) {
         System.err.println("[!] " + ioe.toString());
       }
-
     } catch (Exception e) {
-      System.out.println("[!] " + e.toString());
+      System.err.println("[!] " + e.toString());
     }
-	}
+  }
 }
