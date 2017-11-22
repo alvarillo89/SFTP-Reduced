@@ -9,15 +9,15 @@ import javax.crypto.*;
 
 public class Server {
 
-	public static void main(String[] args) {
+  public static void main(String[] args) {
     UsersDB database = new UsersDB();
-		ServerSocket serverSocket;
-		Socket clientSocket;
+    ServerSocket serverSocket;
+    Socket clientSocket;
 
-		// Puerto de escucha PI
-		final int port = 31416;
+    // Puerto de escucha PI
+    final int port = 31416;
 
-		try {
+    try {
       System.out.print("[*] Generating RSA Keys...");
       KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance("RSA");
       KeyPair keyPair = keyPairGenerator.generateKeyPair();
@@ -25,20 +25,19 @@ public class Server {
       PrivateKey privateKey = keyPair.getPrivate();
       System.out.println("\tOK");
 
-			serverSocket = new ServerSocket(port);
+      serverSocket = new ServerSocket(port);
 
-			while (true) {
+      while (true) {
         System.out.println("[*] Listening for new Connections...");
-				clientSocket = serverSocket.accept();
+        clientSocket = serverSocket.accept();
 
-				Handler handler = new Handler(database, clientSocket, privateKey, publicKey);
-				handler.start();
-			}
-
-		} catch (IOException e) {
-			System.err.println("[!] Error binding to port " + port);
-		} catch (NoSuchAlgorithmException noAlg) {
+        Handler handler = new Handler(database, clientSocket, privateKey, publicKey);
+        handler.start();
+      }
+    } catch (IOException e) {
+      System.err.println("[!] Error binding to port " + port);
+    } catch (NoSuchAlgorithmException noAlg) {
       System.err.println("[!] Cannot generate RSA Keys");
     }
-	}
+  }
 }

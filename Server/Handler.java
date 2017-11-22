@@ -86,13 +86,13 @@ public class Handler extends Thread implements Runnable {
     return response;
   }
 
-	// Constructor que tiene como parámetro una referencia al socket abierto en por otra clase
-	public Handler(UsersDB database, Socket clientSocket, PrivateKey privateKey, PublicKey publicKey) {
+  // Constructor que tiene como parámetro una referencia al socket abierto en por otra clase
+  public Handler(UsersDB database, Socket clientSocket, PrivateKey privateKey, PublicKey publicKey) {
     this.serverPrivateKey = privateKey;
     this.serverPublicKey = publicKey;
     this.clientSocket = clientSocket;
     this.usersDatabase = database;
-	}
+  }
 
 	// Aquí es donde se realiza el procesamiento realmente:
 public void run() {
