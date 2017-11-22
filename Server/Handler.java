@@ -50,6 +50,14 @@ public class Handler extends Thread implements Runnable {
     this.clientPublicKey = fact.generatePublic(spec);
    }
 
+   private byte[] DecryptAssymetric(byte[] msg) throws NoSuchAlgorithmException, NoSuchPaddingException,
+                                             InvalidKeyException, IllegalBlockSizeException,
+                                             BadPaddingException {
+    Cipher rsa = Cipher.getInstance("RSA");
+    rsa.init(Cipher.DECRYPT_MODE, this.serverPrivateKey);
+    return rsa.doFinal(msg);
+   }
+
   private byte[] Encrypt(byte[] msg) throws NoSuchAlgorithmException, NoSuchPaddingException,
                                             InvalidKeyException, IllegalBlockSizeException,
                                             BadPaddingException {
@@ -115,7 +123,7 @@ public void run() {
     // Send Server public key and receive simetric key
     // NOTE: Quizas cuando se recibe tb este en B64 si esto lo esta
     outputStream.write(this.serverPublicKey.getEncoded());
-    dataReceive = ReceiveTillEnd(inputStream);
+    dataReceive = DecryptAssymetric(ReceiveTillEnd(inputStream));
     this.symmetricKey = new SecretKeySpec(dataReceive , 0, dataReceive.length, "AES");
 
 
