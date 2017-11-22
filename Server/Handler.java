@@ -11,6 +11,7 @@ import java.security.*;
 import java.util.Base64;
 import java.security.spec.X509EncodedKeySpec;
 import javax.crypto.*;
+import javax.crypto.spec.SecretKeySpec;
 import java.io.ByteArrayOutputStream;
 import java.net.SocketException;
 
@@ -19,22 +20,28 @@ public class Handler extends Thread implements Runnable {
   private PrivateKey serverPrivateKey;
   private PublicKey serverPublicKey;
   private PublicKey clientPublicKey;
+  private SecretKey symmetricKey;
   private InputStream inputStream;
   private OutputStream outputStream;
   private UsersDB usersDatabase;
 
-  private byte[] ReceiveTillEnd(InputStream input) throws IOException {
-    final int bufferSize = 1024;
-    ByteArrayOutputStream dynamicBuffer = new ByteArrayOutputStream();
-    byte[] buffer = new byte[bufferSize];
-    int read = 0;
+  private static byte[] ReceiveTillEnd(InputStream input) throws IOException {
+		final int bufferSize = 1024;
+		ByteArrayOutputStream dynamicBuffer = new ByteArrayOutputStream();
+		byte[] buffer = new byte[bufferSize];
+    boolean keepReading = true;
+		int read;
 
-    while ((read = input.read(buffer)) >= bufferSize) {
-      dynamicBuffer.write(buffer, 0, read);
-    }
 
-    return dynamicBuffer.toByteArray();
-  }
+		while (keepReading) {
+      read = input.read(buffer);
+		  dynamicBuffer.write(buffer, 0, read);
+
+      if (read < bufferSize) keepReading = false;
+		}
+
+		return dynamicBuffer.toByteArray();
+	}
 
   public void loadPublicKey(String key) throws GeneralSecurityException, IOException {
     byte[] data = Base64.getDecoder().decode((key.getBytes()));
@@ -46,17 +53,18 @@ public class Handler extends Thread implements Runnable {
   private byte[] Encrypt(byte[] msg) throws NoSuchAlgorithmException, NoSuchPaddingException,
                                             InvalidKeyException, IllegalBlockSizeException,
                                             BadPaddingException {
-    Cipher rsa = Cipher.getInstance("RSA");
-    rsa.init(Cipher.ENCRYPT_MODE, this.clientPublicKey);
-    return rsa.doFinal(msg);
+    Cipher aesCipher = Cipher.getInstance("AES");
+    aesCipher.init(Cipher.ENCRYPT_MODE, this.symmetricKey);
+    return aesCipher.doFinal(msg);
+
   }
 
   private byte[] Decrypt(byte[] msg) throws NoSuchAlgorithmException, NoSuchPaddingException,
                                             InvalidKeyException, IllegalBlockSizeException,
                                             BadPaddingException {
-    Cipher rsa = Cipher.getInstance("RSA");
-    rsa.init(Cipher.DECRYPT_MODE, this.serverPrivateKey);
-    return rsa.doFinal(msg);
+    Cipher aesCipher = Cipher.getInstance("AES");
+    aesCipher.init(Cipher.DECRYPT_MODE, this.symmetricKey);
+    return aesCipher.doFinal(msg);
   }
 
   private Operation ProcessGetRequest(Operation request) throws IOException {
@@ -104,9 +112,12 @@ public void run() {
     inputStream = clientSocket.getInputStream();
     outputStream = clientSocket.getOutputStream();
 
-    // Send Server public key
+    // Send Server public key and receive simetric key
     // NOTE: Quizas cuando se recibe tb este en B64 si esto lo esta
     outputStream.write(this.serverPublicKey.getEncoded());
+    dataReceive = ReceiveTillEnd(inputStream);
+    this.symmetricKey = new SecretKeySpec(dataReceive , 0, dataReceive.length, "AES");
+
 
     /* Server state: Not Logged --> Must receive authentication */
     // Receive login message

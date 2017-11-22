@@ -23,10 +23,15 @@ public class Client {
 		final int bufferSize = 1024;
 		ByteArrayOutputStream dynamicBuffer = new ByteArrayOutputStream();
 		byte[] buffer = new byte[bufferSize];
-		int read = 0;
+    boolean keepReading = true;
+		int read;
 
-		while ((read = input.read(buffer)) >= bufferSize) {
+
+		while (keepReading) {
+      read = input.read(buffer);
 		  dynamicBuffer.write(buffer, 0, read);
+
+      if (read < bufferSize) keepReading = false;
 		}
 
 		return dynamicBuffer.toByteArray();
@@ -48,7 +53,7 @@ public class Client {
 
 	//Load a Public Key from Byte Array:
 	public static PublicKey LoadPublicKey(byte[] key) throws GeneralSecurityException, IOException {
-		X509EncodedKeySpec spec = new X509EncodedKeySpec(key);
+    X509EncodedKeySpec spec = new X509EncodedKeySpec(key);
 		KeyFactory fact = KeyFactory.getInstance("RSA");
 		return fact.generatePublic(spec);
 	}
