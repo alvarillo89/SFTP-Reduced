@@ -1,8 +1,8 @@
 #!/bin/bash
 
 # Remove old class files
-rm -f Server/*.class
-rm -f Protocols/*.class
+rm -f Server/*.class >> /dev/null
+rm -f Protocols/*.class >> /dev/null
 
 # Compile Protocol Classes
 javac Protocols/*.java
@@ -26,3 +26,11 @@ cp Server/Server.jar .
 # jar cvfm Client.jar manifest.mf *.class
 # cp Client/Client.jar .
 # cd ..
+
+
+# Instructions
+printf "
+Modo de empleo:
+            Servidor: java -jar Server.jar
+            Cliente: java -jar Cliente.jar
+"
