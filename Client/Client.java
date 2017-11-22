@@ -14,6 +14,7 @@ import java.util.Base64;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.Path;
+import java.io.Console;
 
 
 public class Client {
@@ -65,9 +66,9 @@ public class Client {
 		String host = "localhost";
 		int port = 31416;
 
-		//User and Password (for simplificate):
-		String user = "user";
-		String psswd = "user";
+		//User and Password:
+		String user = "";
+		String psswd = "";
 	
 		try{
 			System.out.println("Wellcome to SFTP-R");
@@ -83,6 +84,14 @@ public class Client {
 
 			System.out.println("Done!");
 			System.out.println("****************************");
+
+			Scanner sc = new Scanner(System.in);
+			System.out.print("Enter User: ");
+			user = sc.next();
+			Console cnsl = System.console();			
+			char[] pwd = cnsl.readPassword("Enter Password: ");
+			psswd = new String(pwd);
+
 			System.out.println("Establishing connection...");
 
 			//Create Socket:
@@ -98,7 +107,7 @@ public class Client {
 			//LOG IN TO SERVER
 			Login loginREQ = new Login();
 			loginREQ.code = 1001;
-			loginREQ.login = user;
+			loginREQ.user = user;
 			loginREQ.pass = psswd;
 			loginREQ.pubKey = Client.ToString(publicKey);
 
@@ -118,7 +127,6 @@ public class Client {
 			System.out.println("****************************");
 			
 			String command = "";
-			Scanner sc = new Scanner(System.in);
 
 			while(!command.equals("quit")){
 				
