@@ -5,7 +5,6 @@ public class Login implements Serializable {
   public int code;
   public String user;
   public String pass;
-  public String pubKey;
 
 
   public static byte[] Serialize(Object obj){
