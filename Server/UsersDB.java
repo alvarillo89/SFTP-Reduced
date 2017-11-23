@@ -13,6 +13,10 @@ public class UsersDB {
   }
 
   public boolean ValidCredentials(String user, String password) {
-    return (this.creedentials.getOrDefault(user, null) == password);
+    String validPassword = this.creedentials.get(user);
+
+    if (validPassword == null) return false;
+
+    return (validPassword.equals(password));
   }
 }

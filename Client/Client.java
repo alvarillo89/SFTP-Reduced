@@ -3,54 +3,58 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.Console;
 import java.net.Socket;
 import java.net.UnknownHostException;
 import java.lang.Runtime;
 import java.security.*;
-import java.util.Scanner;
 import java.security.spec.X509EncodedKeySpec;
-import javax.crypto.*;
+import java.util.Scanner;
 import java.util.Base64;
+import javax.crypto.*;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.Path;
-import java.io.Console;
+
 
 
 public class Client {
 
+	//Function for adjust dinamically the input buffer size:
 	private static byte[] ReceiveTillEnd(InputStream input) throws IOException {
+		System.out.println("ENTRAAAAAAAAAAA");
 		final int bufferSize = 1024;
 		ByteArrayOutputStream dynamicBuffer = new ByteArrayOutputStream();
 		byte[] buffer = new byte[bufferSize];
 		boolean keepReading = true;
 		int read;
 
-
 		while (keepReading) {
 			read = input.read(buffer);
+			System.out.println("LEEEEEEE");
 			dynamicBuffer.write(buffer, 0, read);
-
+			System.out.println("ESCRIBEEEE");
 			if (read < bufferSize) keepReading = false;
 		}
 
 		return dynamicBuffer.toByteArray();
 	}
 
-	//Return a encrypted byte array:
+	//Return a encrypted byte array by RSA algorithm:
 	public static byte[] EncryptRSA(byte[] msg, PublicKey publicKey) throws Exception{
 		Cipher rsa = Cipher.getInstance("RSA");
 		rsa.init(Cipher.ENCRYPT_MODE, publicKey);
 		return rsa.doFinal(msg);
 	}
 
-	//Return a decrypted byte array:
+	//Return a encrypted byte array (Simetric Crypt):
 	public static byte[] Encrypt(byte[] msg, Key key) throws Exception{
 		Cipher aes = Cipher.getInstance("AES");
 		aes.init(Cipher.ENCRYPT_MODE, key);
 		return aes.doFinal(msg);
 	}
 
+	//Return a decrypted byte array (Simetric Crypt):
 	public static byte[] Decrypt(byte[] msg, Key key) throws Exception{
 		Cipher aes = Cipher.getInstance("AES");
 		aes.init(Cipher.DECRYPT_MODE, key);
@@ -66,7 +70,7 @@ public class Client {
 	public static void main(String[] args) {
 
 		//Host name and port:
-		String host = "localhost";
+		String host = "";
 		int port = 31416;
 
 		//User and Password:
@@ -79,7 +83,7 @@ public class Client {
 			System.out.println("****************************");
 			System.out.println("Generating AES Key...");
 
-			//Generate Keys:
+			//Generate Symetric Key:
 			KeyGenerator keyGenerator = KeyGenerator.getInstance("AES");
 			keyGenerator.init(256);
 			Key key = keyGenerator.generateKey();
@@ -88,6 +92,8 @@ public class Client {
 			System.out.println("****************************");
 
 			Scanner sc = new Scanner(System.in);
+			System.out.print("Enter Host Name:" );
+			host = sc.next();
 			System.out.print("Enter User: ");
 			user = sc.next();
 			Console cnsl = System.console();
@@ -102,11 +108,11 @@ public class Client {
 			InputStream inputStream = socket.getInputStream();
 			OutputStream outputStream = socket.getOutputStream();
 
-			//GET SERVER PUBKEY
+			//Get Server Public Key
 			byte[] serverPubKeyBytes = Client.ReceiveTillEnd(inputStream);
 			PublicKey serverPubKey = Client.LoadPublicKey(serverPubKeyBytes);
 
-			//Send Simetric Key
+			//Send Simetric Key encrypted by RSA:
 			outputStream.write(Client.EncryptRSA(key.getEncoded(), serverPubKey));
 
 			//LOG IN TO SERVER
@@ -122,23 +128,31 @@ public class Client {
 			byte[] serverRES = Client.ReceiveTillEnd(inputStream);
 			Login loginRES = Login.Deserialize(Client.Decrypt(serverRES, key));
 
-			if(loginRES.code == 401){
+			if(loginRES.code == 400){
 				System.out.println("[**LOGIN ERROR**]: Invalid user or password");
 				System.exit(1);
 			}
 
 			System.out.println("Done!");
 			System.out.println("****************************");
+			System.out.flush();
 
 			String command = "";
 
 			while(!command.equals("quit")){
 
 				System.out.print("SFTP-R> ");
+			 //Clean output buffer.
 				command = sc.nextLine();
 
+				System.out.println(command);
+
 				if(!command.equals("quit")){
-					String [] parts = command.trim().split("\\s+");
+					String [] parts = command.split("\\s+");
+
+					System.out.println(parts.length);
+					for(int i = 0; i<parts.length; ++i)
+						System.out.println(parts[i]);
 
 					if(parts[0].equals("get") && parts.length == 3){
 						//GET....
@@ -146,16 +160,23 @@ public class Client {
 						getREQ.code = 1002;
 						getREQ.kind = Operation.Kind.Get;
 						getREQ.path = parts[1];
+						System.out.println("GEt req ok");
 
 						byte[] getRequest = Client.Encrypt(Operation.Serialize(getREQ), key);
 						outputStream.write(getRequest, 0, getRequest.length);
+						System.out.println("GET REQ send OK");
 
 						byte[] serverGetRES = Client.ReceiveTillEnd(inputStream);
+						System.out.println("GET RES receive OK");
 						Operation getRES = Operation.Deserialize(Client.Decrypt(serverGetRES, key));
+						System.out.println("GET deserialize OK");
 
 						if(getRES.code == 202){
-							Path file = Paths.get(parts[2]);
+							Path path = Paths.get(parts[2]);
+							Path file = Files.createFile(path);
+
 							byte[] data = getRES.data;
+							System.out.println("DATA OK");
 							Files.write(file, data);
 							System.err.println("[**GET SUCCESS**]");
 						}
@@ -183,9 +204,12 @@ public class Client {
 							System.err.println("[**PUT ERROR**]");
 
 					}
-					else{
-						System.err.println("[**ERROR**]: Unknown Command");
+					else if(parts[0].equals("help") && parts.length == 1){
+						System.err.println("[**GET**]: get <remote file path> <local destination path>\n" +
+										   "[**PUT**]: put <local file path> <remote destination path>\n");
 					}
+					else
+						System.err.println("[**ERROR**]: Unknown Command");
 
 				}
 			}

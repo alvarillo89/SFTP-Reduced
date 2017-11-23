@@ -43,13 +43,6 @@ public class Handler extends Thread implements Runnable {
 		return dynamicBuffer.toByteArray();
 	}
 
-  public void loadPublicKey(String key) throws GeneralSecurityException, IOException {
-    byte[] data = Base64.getDecoder().decode((key.getBytes()));
-    X509EncodedKeySpec spec = new X509EncodedKeySpec(data);
-    KeyFactory fact = KeyFactory.getInstance("RSA");
-    this.clientPublicKey = fact.generatePublic(spec);
-   }
-
    private byte[] DecryptAssymetric(byte[] msg) throws NoSuchAlgorithmException, NoSuchPaddingException,
                                              InvalidKeyException, IllegalBlockSizeException,
                                              BadPaddingException {
@@ -80,13 +73,13 @@ public class Handler extends Thread implements Runnable {
     Path path = Paths.get(request.path);
 
     if (!Files.exists(path)) {
-      response.code = 400;
+      response.code = 402;
       response.kind = request.kind;
       response.path = request.path;
     } else {
       byte[] data = Files.readAllBytes(path);
 
-      response.code = 200;
+      response.code = 202;
       response.kind = request.kind;
       response.path = request.path;
       response.data = data;
@@ -102,7 +95,7 @@ public class Handler extends Thread implements Runnable {
     Files.write(file, data);  // Creates it if it doesnt exists
 
     Operation response = new Operation();
-    response.code = 200;
+    response.code = 203;
     response.kind = request.kind;
     response.path = request.path;
     response.data = new byte[0];
@@ -140,17 +133,17 @@ public void run() {
     Login loginReq = Login.Deserialize(dataReceive);
     Login loginRes = new Login();
 
+
     // If user is invalid, exit. Else load client public RSA key
     if (loginReq == null || !usersDatabase.ValidCredentials(loginReq.user, loginReq.pass)) {
-      loginRes.code = 400;
+      loginRes.code = 401;
 
       dataSend = Encrypt(Login.Serialize(loginRes));
       outputStream.write(dataSend);
       this.clientSocket.close();
       return;
     } else {
-      loadPublicKey(loginReq.pubKey); // Load client public key
-      loginRes.code = 200;
+      loginRes.code = 201;
 
       dataSend = Encrypt(Login.Serialize(loginRes));
       outputStream.write(dataSend);
