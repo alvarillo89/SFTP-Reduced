@@ -1,8 +1,20 @@
 #!/bin/bash
 
-# Remove old class files
-rm -f Server/*.class
-rm -f Protocols/*.class
+function Clean {
+  # Remove old class files
+  echo "Cleaning files..."
+  rm -f Server/*.class
+  rm -f Protocols/*.class
+  rm -f *.jar
+}
+
+if [[ "$1" == "clean" ]]; then
+  Clean
+  exit
+fi
+
+# Clean old Files
+Clean
 
 # Compile Protocol Classes
 javac Protocols/*.java

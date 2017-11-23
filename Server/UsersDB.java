@@ -10,6 +10,7 @@ public class UsersDB {
     this.creedentials = new HashMap<String, String>();
     this.creedentials.put("salva", "1234");
     this.creedentials.put("alvaro", "1234");
+    this.creedentials.put("user", "user");
   }
 
   public boolean ValidCredentials(String user, String password) {
