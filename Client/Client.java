@@ -169,7 +169,7 @@ public class Client {
 
 							byte[] data = getRES.data;
 							Files.write(file, data);
-							System.err.println("[**GET SUCCESS**]");
+							System.out.println("[**GET SUCCESS**]");
 						}
 						else
 							System.err.println("[**GET ERROR**]");
@@ -191,13 +191,13 @@ public class Client {
 						Operation putRES = Operation.Deserialize(Client.Decrypt(serverPutRES, key));
 
 						if(putRES.code == 203)
-							System.err.println("[**PUT SUCCESS**]");
+							System.out.println("[**PUT SUCCESS**]");
 						else
 							System.err.println("[**PUT ERROR**]");
 
 					}
 					else if(parts[0].equals("help") && parts.length == 1){
-						System.err.println("[GET]: get <remote file path> <local destination path>\n" +
+						System.out.println("[GET]: get <remote file path> <local destination path>\n" +
                                "[PUT]: put <local file path> <remote destination path>\n" +
                                "[EXIT]: quit\n" +
                                "[!!!]: Remember use full paths!!!");
