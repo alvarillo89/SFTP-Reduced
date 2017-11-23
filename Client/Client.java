@@ -22,7 +22,6 @@ public class Client {
 
 	//Function for adjust dinamically the input buffer size:
 	private static byte[] ReceiveTillEnd(InputStream input) throws IOException {
-		System.out.println("ENTRAAAAAAAAAAA");
 		final int bufferSize = 1024;
 		ByteArrayOutputStream dynamicBuffer = new ByteArrayOutputStream();
 		byte[] buffer = new byte[bufferSize];
@@ -31,9 +30,7 @@ public class Client {
 
 		while (keepReading) {
 			read = input.read(buffer);
-			System.out.println("LEEEEEEE");
 			dynamicBuffer.write(buffer, 0, read);
-			System.out.println("ESCRIBEEEE");
 			if (read < bufferSize) keepReading = false;
 		}
 
@@ -92,7 +89,7 @@ public class Client {
 			System.out.println("****************************");
 
 			Scanner sc = new Scanner(System.in);
-			System.out.print("Enter Host Name:" );
+			System.out.print("Enter Host Name: " );
 			host = sc.next();
 			System.out.print("Enter User: ");
 			user = sc.next();
@@ -128,31 +125,26 @@ public class Client {
 			byte[] serverRES = Client.ReceiveTillEnd(inputStream);
 			Login loginRES = Login.Deserialize(Client.Decrypt(serverRES, key));
 
-			if(loginRES.code == 400){
+			if(loginRES.code == 401){
 				System.out.println("[**LOGIN ERROR**]: Invalid user or password");
 				System.exit(1);
 			}
 
 			System.out.println("Done!");
 			System.out.println("****************************");
-			System.out.flush();
 
 			String command = "";
+
+			//Print more info:
+			System.out.println("SFTP-R> Type help for commands info, if something going wrong, you will see an error like this:");
 
 			while(!command.equals("quit")){
 
 				System.out.print("SFTP-R> ");
-			 //Clean output buffer.
 				command = sc.nextLine();
-
-				System.out.println(command);
 
 				if(!command.equals("quit")){
 					String [] parts = command.split("\\s+");
-
-					System.out.println(parts.length);
-					for(int i = 0; i<parts.length; ++i)
-						System.out.println(parts[i]);
 
 					if(parts[0].equals("get") && parts.length == 3){
 						//GET....
@@ -160,23 +152,22 @@ public class Client {
 						getREQ.code = 1002;
 						getREQ.kind = Operation.Kind.Get;
 						getREQ.path = parts[1];
-						System.out.println("GEt req ok");
 
 						byte[] getRequest = Client.Encrypt(Operation.Serialize(getREQ), key);
 						outputStream.write(getRequest, 0, getRequest.length);
-						System.out.println("GET REQ send OK");
 
 						byte[] serverGetRES = Client.ReceiveTillEnd(inputStream);
-						System.out.println("GET RES receive OK");
 						Operation getRES = Operation.Deserialize(Client.Decrypt(serverGetRES, key));
-						System.out.println("GET deserialize OK");
 
 						if(getRES.code == 202){
 							Path path = Paths.get(parts[2]);
+
+							if(Files.exists(path))
+								Files.delete(path);
+
 							Path file = Files.createFile(path);
 
 							byte[] data = getRES.data;
-							System.out.println("DATA OK");
 							Files.write(file, data);
 							System.err.println("[**GET SUCCESS**]");
 						}
@@ -190,6 +181,7 @@ public class Client {
 						Operation putREQ = new Operation();
 						putREQ.code = 1003;
 						putREQ.data = data;
+						putREQ.kind = Operation.Kind.Put;
 						putREQ.path = parts[2];
 
 						byte[] putRequest = Client.Encrypt(Operation.Serialize(putREQ), key);
@@ -206,7 +198,8 @@ public class Client {
 					}
 					else if(parts[0].equals("help") && parts.length == 1){
 						System.err.println("[**GET**]: get <remote file path> <local destination path>\n" +
-										   "[**PUT**]: put <local file path> <remote destination path>\n");
+										   "[**PUT**]: put <local file path> <remote destination path>\n" +
+										   "[**!!!**]: Remember use full paths!!!");
 					}
 					else
 						System.err.println("[**ERROR**]: Unknown Command");

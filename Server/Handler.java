@@ -1,6 +1,7 @@
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.File;
 import java.net.Socket;
 import java.util.Random;
 import java.lang.Thread;
@@ -89,16 +90,24 @@ public class Handler extends Thread implements Runnable {
   }
 
   private Operation ProcessPutRequest(Operation request) throws IOException {
-    Path file = Paths.get(request.path);
+    Operation response = new Operation();
+    Path path = Paths.get(request.path);
     byte[] data = request.data;
 
-    Files.write(file, data);  // Creates it if it doesnt exists
+    try {
+      if (Files.exists(path)) Files.delete(path);
 
-    Operation response = new Operation();
-    response.code = 203;
-    response.kind = request.kind;
-    response.path = request.path;
-    response.data = new byte[0];
+      Path file = Files.createFile(path);
+      Files.write(file, data);
+
+      response.code = 203;
+      response.kind = request.kind;
+      response.path = request.path;
+    } catch (java.nio.file.AccessDeniedException e) {
+      response.code = 403;
+      response.kind = request.kind;
+      response.path = request.path;
+    }
 
     return response;
   }
@@ -155,8 +164,9 @@ public void run() {
       Operation request = Operation.Deserialize(dataReceive);
       Operation response = new Operation();
 
-      // If object couldnt be deserialiced, throw out this packet
-      if (request == null) continue;
+      // If object couldnt be deserialiced, or it doesnt say
+      // which kind of operation is, throw this packet
+      if (request == null || request.kind == null) continue;
 
       switch(request.kind) {
         case Put:
@@ -167,7 +177,7 @@ public void run() {
           break;
         default:
           response.kind = request.kind;
-          response.code = 400;
+          response.code = 404;  // Unexpected error
           break;
       }
 
