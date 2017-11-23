@@ -16,7 +16,8 @@ fi
 # Clean old Files
 Clean
 
-# Compile Protocol Classes
+
+######## Protocols Compilation ########
 javac Protocols/*.java
 
 

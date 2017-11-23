@@ -197,9 +197,10 @@ public class Client {
 
 					}
 					else if(parts[0].equals("help") && parts.length == 1){
-						System.err.println("[**GET**]: get <remote file path> <local destination path>\n" +
-										   "[**PUT**]: put <local file path> <remote destination path>\n" +
-										   "[**!!!**]: Remember use full paths!!!");
+						System.err.println("[GET]: get <remote file path> <local destination path>\n" +
+                               "[PUT]: put <local file path> <remote destination path>\n" +
+                               "[EXIT]: quit\n" +
+                               "[!!!]: Remember use full paths!!!");
 					}
 					else
 						System.err.println("[**ERROR**]: Unknown Command");
