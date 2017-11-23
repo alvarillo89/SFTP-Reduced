@@ -31,8 +31,6 @@ public class Client {
 			read = input.read(buffer);
 			dynamicBuffer.write(buffer, 0, read);
 
-			System.out.println(read);
-
 			if (read < bufferSize) keepReading = false;
 		}
 

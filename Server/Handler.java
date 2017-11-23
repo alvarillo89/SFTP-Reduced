@@ -76,14 +76,21 @@ public class Handler extends Thread implements Runnable {
   }
 
   private Operation ProcessGetRequest(Operation request) throws IOException {
-    Path path = Paths.get(request.path);
-    byte[] data = Files.readAllBytes(path);
-
     Operation response = new Operation();
-    response.code = 200;
-    response.kind = request.kind;
-    response.path = request.path;
-    response.data = data;
+    Path path = Paths.get(request.path);
+
+    if (!Files.exists(path)) {
+      response.code = 400;
+      response.kind = request.kind;
+      response.path = request.path;
+    } else {
+      byte[] data = Files.readAllBytes(path);
+
+      response.code = 200;
+      response.kind = request.kind;
+      response.path = request.path;
+      response.data = data;
+    }
 
     return response;
   }
@@ -91,7 +98,8 @@ public class Handler extends Thread implements Runnable {
   private Operation ProcessPutRequest(Operation request) throws IOException {
     Path file = Paths.get(request.path);
     byte[] data = request.data;
-    Files.write(file, data);
+
+    Files.write(file, data);  // Creates it if it doesnt exists
 
     Operation response = new Operation();
     response.code = 200;
@@ -134,7 +142,6 @@ public void run() {
 
     // If user is invalid, exit. Else load client public RSA key
     if (loginReq == null || !usersDatabase.ValidCredentials(loginReq.user, loginReq.pass)) {
-      System.out.println("aaaaaa");
       loginRes.code = 400;
 
       dataSend = Encrypt(Login.Serialize(loginRes));
