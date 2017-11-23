@@ -43,13 +43,6 @@ public class Handler extends Thread implements Runnable {
 		return dynamicBuffer.toByteArray();
 	}
 
-  public void loadPublicKey(String key) throws GeneralSecurityException, IOException {
-    byte[] data = Base64.getDecoder().decode((key.getBytes()));
-    X509EncodedKeySpec spec = new X509EncodedKeySpec(data);
-    KeyFactory fact = KeyFactory.getInstance("RSA");
-    this.clientPublicKey = fact.generatePublic(spec);
-   }
-
    private byte[] DecryptAssymetric(byte[] msg) throws NoSuchAlgorithmException, NoSuchPaddingException,
                                              InvalidKeyException, IllegalBlockSizeException,
                                              BadPaddingException {
@@ -99,6 +92,7 @@ public class Handler extends Thread implements Runnable {
     response.path = request.path;
     response.data = new byte[0];
 
+
     return response;
   }
 
@@ -132,17 +126,18 @@ public void run() {
     Login loginReq = Login.Deserialize(dataReceive);
     Login loginRes = new Login();
 
+    System.out.println(loginReq.user + loginReq.pass);
+
     // If user is invalid, exit. Else load client public RSA key
     if (loginReq == null || !usersDatabase.ValidCredentials(loginReq.user, loginReq.pass)) {
-      System.out.println("aaaaaa");
-      loginRes.code = 400;
+      loginRes.code = 401;
+      System.out.println("ESTA MALLL");
 
       dataSend = Encrypt(Login.Serialize(loginRes));
       outputStream.write(dataSend);
       this.clientSocket.close();
       return;
     } else {
-      loadPublicKey(loginReq.pubKey); // Load client public key
       loginRes.code = 200;
 
       dataSend = Encrypt(Login.Serialize(loginRes));
