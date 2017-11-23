@@ -121,70 +121,70 @@ public class Handler extends Thread implements Runnable {
   }
 
 	// Aquí es donde se realiza el procesamiento realmente:
-public void run() {
-  String datos;
-  byte[] dataReceive;
-  byte[] dataSend;
+  public void run() {
+    String datos;
+    byte[] dataReceive;
+    byte[] dataSend;
 
-  try {
-    inputStream = clientSocket.getInputStream();
-    outputStream = clientSocket.getOutputStream();
+    try {
+      inputStream = clientSocket.getInputStream();
+      outputStream = clientSocket.getOutputStream();
 
-    // Send Server public key and receive simetric key
-    outputStream.write(this.serverPublicKey.getEncoded());
-    dataReceive = DecryptAssymetric(ReceiveTillEnd(inputStream));
-    this.symmetricKey = new SecretKeySpec(dataReceive , 0, dataReceive.length, "AES");
+      // Send Server public key and receive simetric key
+      outputStream.write(this.serverPublicKey.getEncoded());
+      dataReceive = DecryptAssymetric(ReceiveTillEnd(inputStream));
+      this.symmetricKey = new SecretKeySpec(dataReceive , 0, dataReceive.length, "AES");
 
-    /* Server state: Not Logged --> Must receive authentication */
-    // Receive login message
-    dataReceive = ReceiveTillEnd(inputStream);
-    dataReceive = Decrypt(dataReceive);
-    Login loginReq = Login.Deserialize(dataReceive);
-    Login loginRes = new Login();
+      /* Server state: Not Logged --> Must receive authentication */
+      // Receive login message
+      dataReceive = ReceiveTillEnd(inputStream);
+      dataReceive = Decrypt(dataReceive);
+      Login loginReq = Login.Deserialize(dataReceive);
+      Login loginRes = new Login();
 
 
-    // If user is invalid, exit. Else load client public RSA key
-    if (loginReq == null || !usersDatabase.ValidCredentials(loginReq.user, loginReq.pass)) {
-      loginRes.code = 401;
+      // If user is invalid, exit. Else load client public RSA key
+      if (loginReq == null || !usersDatabase.ValidCredentials(loginReq.user, loginReq.pass)) {
+        loginRes.code = 401;
 
-      dataSend = Encrypt(Login.Serialize(loginRes));
-      outputStream.write(dataSend);
-      this.clientSocket.close();
-      return;
-    } else {
-      loginRes.code = 201;
+        dataSend = Encrypt(Login.Serialize(loginRes));
+        outputStream.write(dataSend);
+        this.clientSocket.close();
+        return;
+      } else {
+        loginRes.code = 201;
 
-      dataSend = Encrypt(Login.Serialize(loginRes));
-      outputStream.write(dataSend);
-    }
-
-    /* Server state: Waiting Req --> Must receive petitions */
-    while (true) {
-      dataReceive = Decrypt(ReceiveTillEnd(inputStream));
-      Operation request = Operation.Deserialize(dataReceive);
-      Operation response = new Operation();
-
-      // If object couldnt be deserialiced, or it doesnt say
-      // which kind of operation is, throw this packet
-      if (request == null || request.kind == null) continue;
-
-      switch(request.kind) {
-        case Put:
-          response = ProcessPutRequest(request);
-          break;
-        case Get:
-          response = ProcessGetRequest(request);
-          break;
-        default:
-          response.kind = request.kind;
-          response.code = 404;  // Unexpected error
-          break;
+        dataSend = Encrypt(Login.Serialize(loginRes));
+        outputStream.write(dataSend);
       }
 
-      // Crypt and send
-      dataSend = Encrypt(Operation.Serialize(response));
-      outputStream.write(dataSend);
-    }
+      /* Server state: Waiting Req --> Must receive petitions */
+      while (true) {
+        dataReceive = Decrypt(ReceiveTillEnd(inputStream));
+        Operation request = Operation.Deserialize(dataReceive);
+        Operation response = new Operation();
+
+        // If object couldnt be deserialiced, or it doesnt say
+        // which kind of operation is, throw this packet
+        if (request == null || request.kind == null) continue;
+
+        switch(request.kind) {
+          case Put:
+            response = ProcessPutRequest(request);
+            break;
+          case Get:
+            response = ProcessGetRequest(request);
+            break;
+          default:
+            response.kind = request.kind;
+            response.code = 404;  // Unexpected error
+            break;
+        }
+
+        // Crypt and send
+        dataSend = Encrypt(Operation.Serialize(response));
+        outputStream.write(dataSend);
+      }
 
     } catch (SocketException e) {
       System.err.println("[-] Connection lost with " + this.clientSocket.toString());
